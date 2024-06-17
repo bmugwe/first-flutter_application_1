@@ -1,5 +1,6 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -38,6 +39,7 @@ class MyAppState extends ChangeNotifier {
   void toggleFavourite() {
     if (favourites.contains(current)) {
       favourites.remove(current);
+      print("current:  $current");
     } else {
       favourites.add(current);
     }
@@ -53,46 +55,66 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  var selectedIndex = 0;
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Row(
-        children: [
-          SafeArea(
-            child: NavigationRail(
-              extended: false,
-              destinations: [
-                NavigationRailDestination(
-                  icon: Icon(Icons.home),
-                  label: Text('Home'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.favorite),
-                  label: Text('Favorites'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.logout),
-                  label: Text('Logout'),
-                ),
-              ],
-              selectedIndex: 0,
-              onDestinationSelected: (value) {
-                print('selected: $value');
-              },
+    Widget page;
+    switch (selectedIndex) {
+      case 0:
+        page = GeneratorPage();
+        break;
+      case 1:
+        page = FavoutitePage();
+        break;
+      case 2:
+        page = Placeholder();
+        break;
+      default:
+        throw UnimplementedError('no  widget for {$selectedIndex}');
+    }
+
+    return LayoutBuilder(builder: (context, Constraints) {
+      return Scaffold(
+        body: Row(
+          children: [
+            SafeArea(
+              child: NavigationRail(
+                extended: Constraints.maxWidth >= 600,
+                destinations: [
+                  NavigationRailDestination(
+                    icon: Icon(Icons.home),
+                    label: Text('Home'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.favorite),
+                    label: Text('Favorites'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.logout),
+                    label: Text('Logout'),
+                  ),
+                ],
+                selectedIndex: selectedIndex,
+                onDestinationSelected: (value) {
+                  setState(() {
+                    selectedIndex = value;
+                  });
+                },
+              ),
             ),
-          ),
-          Expanded(
-            child: Container(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              child: GeneratorPage(),
+            Expanded(
+              child: Container(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                child: page,
+              ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    });
   }
 }
-
 
 class GeneratorPage extends StatelessWidget {
   @override
@@ -138,8 +160,46 @@ class GeneratorPage extends StatelessWidget {
   }
 }
 
-// ...
+class FavoutitePage extends StatefulWidget {
+  @override
+  State<FavoutitePage> createState() => _FavoutitePageState();
+}
 
+class _FavoutitePageState extends State<FavoutitePage> {
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+    var likedFavourites = appState.favourites;
+
+    if (likedFavourites.isEmpty) {
+      return Center(
+        child: Text('No favourites yet '),
+      );
+    }
+
+    return SingleChildScrollView(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text("Liked objects: "),
+            for (var lik in likedFavourites)
+              ListTile(
+                leading: Icon(Icons.favorite),
+                title: Text(lik.asLowerCase),
+                onTap: () {
+                  appState.favourites.remove(lik);
+                  setState(() {});
+                },
+              )
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ...
 
 class BigCard extends StatelessWidget {
   const BigCard({
